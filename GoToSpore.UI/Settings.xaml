@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:GoToSpore.UI"
+             x:Class="GoToSpore.UI.SettingsPage"
+             x:Name="thisPage"
+             Title="Settings"
+             FlowDirection="LeftToRight"
+             NavigationPage.HasNavigationBar="False"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="#121212">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <!-- Card Style -->
+            <Style x:Key="SettingsCardStyle" TargetType="Border">
+                <Setter Property="BackgroundColor" Value="#1E1E1E" />
+                <Setter Property="Stroke" Value="#333333" />
+                <Setter Property="StrokeThickness" Value="1" />
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="StrokeShape">
+                    <Setter.Value>
+                        <RoundRectangle CornerRadius="16" />
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Divider Style -->
+            <Style x:Key="DividerStyle" TargetType="BoxView">
+                <Setter Property="HeightRequest" Value="1" />
+                <Setter Property="Color" Value="#2A2A2A" />
+                <Setter Property="HorizontalOptions" Value="Fill" />
+            </Style>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <!-- Grid مقسم بشكل صح إلى 3 أجزاء: الهيدر، المحتوى الممرر، والشريط السفلي -->
+    <Grid RowDefinitions="Auto, *, Auto">
+
+        <!-- Row 0: Top Bar / Header -->
+        <Grid Grid.Row="0" BackgroundColor="#1E1E1E">
+            <VerticalStackLayout>
+                <Grid ColumnDefinitions="*, Auto" Padding="20,16">
+                    <VerticalStackLayout Grid.Column="0" Spacing="2" VerticalOptions="Center">
+                        <Label Text="Settings"
+                               FontSize="24"
+                               FontAttributes="Bold"
+                               TextColor="#FFFFFF" />
+                        <Label Text="Manage preferences and application configurations"
+                               FontSize="12"
+                               TextColor="#A3A3A3" />
+                    </VerticalStackLayout>
+                </Grid>
+
+                <!-- Yellow Accent Line -->
+                <BoxView HeightRequest="3" Color="#EAB308" HorizontalOptions="Fill" />
+            </VerticalStackLayout>
+        </Grid>
+
+        <!-- Row 1: Scrollable Settings Content -->
+        <ScrollView Grid.Row="1" VerticalScrollBarVisibility="Never">
+            <VerticalStackLayout Padding="20" Spacing="20">
+
+                <!-- Section: Tracking & Sensors -->
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="TRACKING &amp; SENSORS"
+                           FontSize="12"
+                           FontAttributes="Bold"
+                           TextColor="#EAB308"
+                           Margin="4,0" />
+
+                    <Border Style="{StaticResource SettingsCardStyle}">
+                        <VerticalStackLayout Spacing="0">
+                            <!-- Sensor Auto-Start -->
+                            <Grid ColumnDefinitions="*, Auto" Padding="16">
+                                <VerticalStackLayout Spacing="2" VerticalOptions="Center">
+                                    <Label Text="Auto-Start Sensor" TextColor="#FFFFFF" FontSize="14" FontAttributes="Bold" />
+                                    <Label Text="Automatically enable step and motion sensors on launch" TextColor="#A3A3A3" FontSize="12" />
+                                </VerticalStackLayout>
+                                <Switch Grid.Column="1" 
+                                        IsToggled="{Binding IsAutoStartSensor, Mode=TwoWay}" 
+                                        OnColor="#EAB308" 
+                                        VerticalOptions="Center" />
+                            </Grid>
+
+                            <BoxView Style="{StaticResource DividerStyle}" />
+
+                            <!-- High Accuracy GPS -->
+                            <Grid ColumnDefinitions="*, Auto" Padding="16">
+                                <VerticalStackLayout Spacing="2" VerticalOptions="Center">
+                                    <Label Text="High Precision Location" TextColor="#FFFFFF" FontSize="14" FontAttributes="Bold" />
+                                    <Label Text="Use GPS for accurate distance calculation (Uses more battery)" TextColor="#A3A3A3" FontSize="12" />
+                                </VerticalStackLayout>
+                                <Switch Grid.Column="1" 
+                                        IsToggled="{Binding IsHighPrecisionLocation, Mode=TwoWay}" 
+                                        OnColor="#EAB308" 
+                                        VerticalOptions="Center" />
+                            </Grid>
+
+                            <BoxView Style="{StaticResource DividerStyle}" />
+
+                            <!-- Step Stride Length -->
+                            <Grid ColumnDefinitions="*, Auto" Padding="16">
+                                <VerticalStackLayout Spacing="2" VerticalOptions="Center">
+                                    <Label Text="Average Stride Length" TextColor="#FFFFFF" FontSize="14" FontAttributes="Bold" />
+                                    <Label Text="Used to estimate distance from step count" TextColor="#A3A3A3" FontSize="12" />
+                                </VerticalStackLayout>
+                                <Label Grid.Column="1" Text="0.75 m" TextColor="#EAB308" FontSize="14" FontAttributes="Bold" VerticalOptions="Center" />
+                            </Grid>
+                        </VerticalStackLayout>
+                    </Border>
+                </VerticalStackLayout>
+
+                <!-- Section: Notifications & Alerts -->
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="NOTIFICATIONS"
+                           FontSize="12"
+                           FontAttributes="Bold"
+                           TextColor="#EAB308"
+                           Margin="4,0" />
+
+                    <Border Style="{StaticResource SettingsCardStyle}">
+                        <VerticalStackLayout Spacing="0">
+                            <!-- Push Notifications -->
+                            <Grid ColumnDefinitions="*, Auto" Padding="16">
+                                <VerticalStackLayout Spacing="2" VerticalOptions="Center">
+                                    <Label Text="Activity Summary Alerts" TextColor="#FFFFFF" FontSize="14" FontAttributes="Bold" />
+                                    <Label Text="Receive daily progress reports and achievements" TextColor="#A3A3A3" FontSize="12" />
+                                </VerticalStackLayout>
+                                <Switch Grid.Column="1" 
+                                        IsToggled="{Binding IsActivitySummaryAlerts, Mode=TwoWay}" 
+                                        OnColor="#EAB308" 
+                                        VerticalOptions="Center" />
+                            </Grid>
+
+                            <BoxView Style="{StaticResource DividerStyle}" />
+
+                            <!-- Background Tracking Notification -->
+                            <Grid ColumnDefinitions="*, Auto" Padding="16">
+                                <VerticalStackLayout Spacing="2" VerticalOptions="Center">
+                                    <Label Text="Persistent Status Notification" TextColor="#FFFFFF" FontSize="14" FontAttributes="Bold" />
+                                    <Label Text="Show active tracker status in system notification tray" TextColor="#A3A3A3" FontSize="12" />
+                                </VerticalStackLayout>
+                                <Switch Grid.Column="1" 
+                                        IsToggled="{Binding IsPersistentNotification, Mode=TwoWay}" 
+                                        OnColor="#EAB308" 
+                                        VerticalOptions="Center" />
+                            </Grid>
+                        </VerticalStackLayout>
+                    </Border>
+                </VerticalStackLayout>
+
+                <!-- Section: Account & System -->
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="SYSTEM &amp; DATA"
+                           FontSize="12"
+                           FontAttributes="Bold"
+                           TextColor="#EAB308"
+                           Margin="4,0" />
+
+                    <Border Style="{StaticResource SettingsCardStyle}">
+                        <VerticalStackLayout Spacing="0">
+                            <!-- Clear Cache -->
+                            <Grid ColumnDefinitions="*, Auto" Padding="16">
+                                <Grid.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnClearCacheTapped" />
+                                </Grid.GestureRecognizers>
+                                <VerticalStackLayout Spacing="2" VerticalOptions="Center">
+                                    <Label Text="Clear Local Data Cache" TextColor="#FFFFFF" FontSize="14" FontAttributes="Bold" />
+                                    <Label Text="Free up local space used by offline tracker history" TextColor="#A3A3A3" FontSize="12" />
+                                </VerticalStackLayout>
+                                <Label Grid.Column="1" 
+                                       Text="{Binding CacheSize}" 
+                                       TextColor="#737373" 
+                                       FontSize="12" 
+                                       VerticalOptions="Center" />
+                            </Grid>
+
+                            <BoxView Style="{StaticResource DividerStyle}" />
+
+                            <!-- About & App Version -->
+                            <Grid ColumnDefinitions="*, Auto" Padding="16">
+                                <VerticalStackLayout Spacing="2" VerticalOptions="Center">
+                                    <Label Text="App Version" TextColor="#FFFFFF" FontSize="14" FontAttributes="Bold" />
+                                    <Label Text="GoToSpore Mobile Edition" TextColor="#A3A3A3" FontSize="12" />
+                                </VerticalStackLayout>
+                                <Label Grid.Column="1" Text="v1.0.4" TextColor="#A3A3A3" FontSize="13" VerticalOptions="Center" />
+                            </Grid>
+                        </VerticalStackLayout>
+                    </Border>
+                </VerticalStackLayout>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- Row 2: Reusable Custom Bottom Navigation Bar -->
+        <controls:CustomNavBar Grid.Row="2" ActiveTab="Settings" />
+
+    </Grid>
+
+</ContentPage>

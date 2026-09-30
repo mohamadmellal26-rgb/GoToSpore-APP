@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="GoToSpore.UI.LivePage"
+             BackgroundColor="Black"
+             NavigationPage.HasNavigationBar="False">
+
+    <Grid RowDefinitions="Auto, *, Auto">
+
+        <!-- Header: شريط العنوان العلوي -->
+        <Grid Grid.Row="0" ColumnDefinitions="Auto, *, Auto" Padding="16,12" BackgroundColor="Black">
+            
+            <!-- زر إغلاق البث -->
+            <Button Grid.Column="0"
+                    BackgroundColor="#333333"
+                    WidthRequest="40" HeightRequest="40"
+                    CornerRadius="20"
+                    Clicked="OnCloseLiveClicked">
+                <Button.ImageSource>
+                    <FontImageSource Glyph="✕" Color="White" Size="16"/>
+                </Button.ImageSource>
+            </Button>
+
+            <!-- معلومات التمرين والعدادات -->
+            <HorizontalStackLayout Grid.Column="1" Spacing="10" HorizontalOptions="Center" VerticalOptions="Center">
+                <!-- عداد الوقت -->
+                <Border BackgroundColor="Black" Stroke="#333333" StrokeThickness="1" StrokeShape="RoundRectangle 8" Padding="10,6">
+                    <Label x:Name="TimerLabel" Text="00:00" TextColor="#FACC15" FontSize="13" FontAttributes="Bold"/>
+                </Border>
+                <!-- عداد السعرات -->
+                <Border BackgroundColor="Black" Stroke="#333333" StrokeThickness="1" StrokeShape="RoundRectangle 8" Padding="10,6">
+                    <Label x:Name="CaloriesLabel" Text="0 KCAL" TextColor="White" FontSize="13" FontAttributes="Bold"/>
+                </Border>
+            </HorizontalStackLayout>
+
+            <!-- شارة البث المباشر -->
+            <Border Grid.Column="2" BackgroundColor="#FACC15" StrokeShape="RoundRectangle 6" Padding="10,4" VerticalOptions="Center">
+                <Label Text="LIVE" TextColor="Black" FontSize="11" FontAttributes="Bold"/>
+            </Border>
+        </Grid>
+
+        <!-- الوسط: معاينة الكاميرا والتعليقات -->
+        <Grid Grid.Row="1">
+            <toolkit:CameraView x:Name="LiveCameraView" 
+                                HorizontalOptions="Fill" 
+                                VerticalOptions="Fill" />
+
+            <!-- قائمة التعليقات -->
+            <VerticalStackLayout x:Name="CommentsStack" 
+                                 VerticalOptions="End" 
+                                 HorizontalOptions="Start" 
+                                 Spacing="8" 
+                                 Margin="16" 
+                                 ZIndex="2"/>
+
+            <!-- تفاعل القلوب الطائرة -->
+            <AbsoluteLayout x:Name="FloatingHeartsContainer" 
+                            HorizontalOptions="Fill" 
+                            VerticalOptions="Fill" 
+                            ZIndex="3" 
+                            InputTransparent="True"/>
+        </Grid>
+
+        <!-- الأسفل: حقل الكتابة وزر الإرسال فقط -->
+        <Grid Grid.Row="2" ColumnDefinitions="*, Auto" ColumnSpacing="8" Padding="12,12" BackgroundColor="Black">
+            
+            <!-- حقل إدخال التعليق -->
+            <Entry x:Name="CommentEntry"
+                   Grid.Column="0"
+                   Placeholder="اكتب تعليقاً..."
+                   PlaceholderColor="#666666"
+                   TextColor="White"
+                   BackgroundColor="#333333"
+                   HeightRequest="44"
+                   MaxLength="100"/>
+
+            <!-- زر الإرسال -->
+            <Button Grid.Column="1"
+                    BackgroundColor="#FACC15"
+                    WidthRequest="44" HeightRequest="44"
+                    CornerRadius="8"
+                    Clicked="OnSendCommentClicked">
+                <Button.ImageSource>
+                    <FontImageSource Glyph="➤" Color="Black" Size="16"/>
+                </Button.ImageSource>
+            </Button>
+        </Grid>
+
+    </Grid>
+</ContentPage>

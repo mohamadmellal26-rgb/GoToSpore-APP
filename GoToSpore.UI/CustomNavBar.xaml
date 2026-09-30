@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="GoToSpore.UI.CustomNavBar"
+             x:Name="self">
+
+    <Border BackgroundColor="#1E1E1E"
+            Stroke="#2A2A2A"
+            StrokeThickness="1"
+            Padding="0"
+            HeightRequest="65">
+        <Border.StrokeShape>
+            <RoundRectangle CornerRadius="0" />
+        </Border.StrokeShape>
+
+        <Grid ColumnDefinitions="*, *, *, *, *"
+              HorizontalOptions="Fill"
+              VerticalOptions="Fill">
+
+            <!-- Home Tab -->
+            <Grid Grid.Column="0" BackgroundColor="Transparent" InputTransparent="False">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnHomeTabTapped" NumberOfTapsRequired="1" />
+                </Grid.GestureRecognizers>
+                <VerticalStackLayout VerticalOptions="Center" HorizontalOptions="Center" Spacing="4" InputTransparent="True">
+                    <Path Data="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"
+                          Fill="{Binding HomeColor, Source={x:Reference self}}"
+                          Aspect="Uniform"
+                          HeightRequest="22"
+                          WidthRequest="22"
+                          HorizontalOptions="Center" />
+                    <Label Text="Home" FontSize="11" TextColor="{Binding HomeColor, Source={x:Reference self}}" HorizontalOptions="Center" />
+                </VerticalStackLayout>
+            </Grid>
+
+            <!-- Activities Tab -->
+            <Grid Grid.Column="1" BackgroundColor="Transparent" InputTransparent="False">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnActivitiesTabTapped" NumberOfTapsRequired="1" />
+                </Grid.GestureRecognizers>
+                <VerticalStackLayout VerticalOptions="Center" HorizontalOptions="Center" Spacing="4" InputTransparent="True">
+                    <Path Data="M13.5 5.5c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zM9.8 8.9L7 23h2.1l1.8-8 2.1 2v6h2v-7.5l-2.1-2 .6-3C14.8 12 16.8 13 19 13v-2c-1.9 0-3.5-1-4.3-2.4l-1-1.6c-.4-.6-1-1-1.7-1-.3 0-.5.1-.8.1L6 8.3V13h2V9.6l1.8-.7z"
+                          Fill="{Binding ActivitiesColor, Source={x:Reference self}}"
+                          Aspect="Uniform"
+                          HeightRequest="22"
+                          WidthRequest="22"
+                          HorizontalOptions="Center" />
+                    <Label Text="Active" FontSize="11" TextColor="{Binding ActivitiesColor, Source={x:Reference self}}" HorizontalOptions="Center" />
+                </VerticalStackLayout>
+            </Grid>
+
+            <!-- Live Tab -->
+            <Grid Grid.Column="2" BackgroundColor="Transparent" InputTransparent="False">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnLiveTabTapped" NumberOfTapsRequired="1" />
+                </Grid.GestureRecognizers>
+                <VerticalStackLayout VerticalOptions="Center" HorizontalOptions="Center" Spacing="4" InputTransparent="True">
+                    <Path Data="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"
+                          Fill="{Binding LiveColor, Source={x:Reference self}}"
+                          Aspect="Uniform"
+                          HeightRequest="22"
+                          WidthRequest="22"
+                          HorizontalOptions="Center" />
+                    <Label Text="Live" FontSize="11" TextColor="{Binding LiveColor, Source={x:Reference self}}" HorizontalOptions="Center" />
+                </VerticalStackLayout>
+            </Grid>
+
+            <!-- Profile Tab -->
+            <Grid Grid.Column="3" BackgroundColor="Transparent" InputTransparent="False">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnProfileTapped" NumberOfTapsRequired="1" />
+                </Grid.GestureRecognizers>
+                <VerticalStackLayout VerticalOptions="Center" HorizontalOptions="Center" Spacing="4" InputTransparent="True">
+                    <Path Data="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+                          Fill="{Binding ProfileColor, Source={x:Reference self}}"
+                          Aspect="Uniform"
+                          HeightRequest="22"
+                          WidthRequest="22"
+                          HorizontalOptions="Center" />
+                    <Label Text="Profile" FontSize="11" TextColor="{Binding ProfileColor, Source={x:Reference self}}" HorizontalOptions="Center" />
+                </VerticalStackLayout>
+            </Grid>
+
+            <!-- Settings Tab -->
+            <Grid Grid.Column="4" BackgroundColor="Transparent" InputTransparent="False">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnSettingsTabTapped" NumberOfTapsRequired="1" />
+                </Grid.GestureRecognizers>
+                <VerticalStackLayout VerticalOptions="Center" HorizontalOptions="Center" Spacing="4" InputTransparent="True">
+                    <Path Data="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"
+                          Fill="{Binding SettingsColor, Source={x:Reference self}}"
+                          Aspect="Uniform"
+                          HeightRequest="22"
+                          WidthRequest="22"
+                          HorizontalOptions="Center" />
+                    <Label Text="Settings" FontSize="11" TextColor="{Binding SettingsColor, Source={x:Reference self}}" HorizontalOptions="Center" />
+                </VerticalStackLayout>
+            </Grid>
+
+        </Grid>
+    </Border>
+</ContentView>

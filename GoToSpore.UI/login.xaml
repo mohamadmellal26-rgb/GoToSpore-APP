@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="GoToSpore.UI.LoginPage"
+             Title="GoToSpore - الحساب"
+             BackgroundColor="#121212">
+
+    <Grid Padding="30">
+        <VerticalStackLayout VerticalOptions="Center" Spacing="15">
+
+            <!-- عنوان التطبيق باللون البرتقالي -->
+            <Label Text="GoToSpore" 
+                   TextColor="#F97316" 
+                   FontSize="32" 
+                   FontAttributes="Bold" 
+                   HorizontalOptions="Center" />
+
+            <Label x:Name="TxtTitle" 
+                   Text="تسجيل الدخول إلى حسابك" 
+                   TextColor="#9CA3AF" 
+                   FontSize="14" 
+                   HorizontalOptions="Center" 
+                   Margin="0,0,0,10" />
+
+            <!-- اسم المستخدم -->
+            <Label Text="اسم المستخدم" 
+                   TextColor="#E5E7EB" 
+                   FontSize="13" />
+            
+            <Border StrokeThickness="0" 
+                    BackgroundColor="#1E1E1E" 
+                    Padding="12,0">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="8" />
+                </Border.StrokeShape>
+                <Entry x:Name="TxtUsername" 
+                       HeightRequest="45" 
+                       BackgroundColor="Transparent" 
+                       TextColor="#FFFFFF" 
+                       PlaceholderColor="#6B7280"
+                       FontSize="14" />
+            </Border>
+
+            <!-- كلمة المرور -->
+            <Label Text="كلمة المرور" 
+                   TextColor="#E5E7EB" 
+                   FontSize="13" />
+            
+            <Border StrokeThickness="0" 
+                    BackgroundColor="#1E1E1E" 
+                    Padding="12,0">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="8" />
+                </Border.StrokeShape>
+                <Entry x:Name="TxtPassword" 
+                       IsPassword="True" 
+                       HeightRequest="45" 
+                       BackgroundColor="Transparent" 
+                       TextColor="#FFFFFF" 
+                       PlaceholderColor="#6B7280"
+                       FontSize="14" />
+            </Border>
+
+            <!-- الزر الرئيسي برتقالي -->
+            <Button x:Name="BtnSubmit" 
+                    Text="تسجيل الدخول" 
+                    HeightRequest="48" 
+                    BackgroundColor="#F97316" 
+                    TextColor="White" 
+                    FontAttributes="Bold" 
+                    FontSize="15" 
+                    CornerRadius="8"
+                    Margin="0,10,0,0"
+                    Clicked="BtnSubmit_Click" />
+
+            <!-- زر التبديل بين الوضعين -->
+            <Button x:Name="BtnToggleMode" 
+                    Text="ليس لديك حساب؟ إنشاء حساب جديد" 
+                    BackgroundColor="Transparent" 
+                    TextColor="#9CA3AF" 
+                    FontSize="13"
+                    Clicked="BtnToggleMode_Click" />
+
+            <!-- مؤشر التحميل برتقالي -->
+            <ActivityIndicator x:Name="LoadingBar" 
+                               IsRunning="False" 
+                               IsVisible="False" 
+                               Color="#F97316" 
+                               HeightRequest="30" />
+
+            <!-- التنبيهات -->
+            <Label x:Name="TxtStatus" 
+                   Text="" 
+                   TextColor="#EF4444" 
+                   FontSize="13" 
+                   HorizontalOptions="Center" 
+                   LineBreakMode="WordWrap" />
+
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>
