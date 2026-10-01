@@ -35,7 +35,6 @@ namespace GoToSpore.UI
         private const double TargetRunningKm = 5.0;
         private const int TargetWalkingMinutes = 30;
 
-        // غير هذا الرابط حسب عنوان السيرفر الخاص بك (مثلاً http://10.0.2.2:8080 للـ Emulator)
         private const string ApiBaseUrl = "http://10.0.2.2:8080/api";
         private readonly HttpClient _httpClient = new HttpClient();
 
@@ -67,7 +66,7 @@ namespace GoToSpore.UI
         {
             base.OnDisappearing();
             ToggleAccelerometer(false);
-            
+
             SaveCurrentDataLocally();
             await SyncDataToApiAsync();
         }
@@ -83,7 +82,8 @@ namespace GoToSpore.UI
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var json = await response.ContentReadAsStringAsync();
+                    // تصحيح: استخدام response.Content.ReadAsStringAsync()
+                    var json = await response.Content.ReadAsStringAsync();
                     using var doc = JsonDocument.Parse(json);
                     var root = doc.RootElement;
 
@@ -243,7 +243,7 @@ namespace GoToSpore.UI
             }
         }
 
-        private async void AddStepAndDistance(int stepIncrement)
+        private void AddStepAndDistance(int stepIncrement)
         {
             _steps += stepIncrement;
             _distanceInMeters += stepIncrement * StepDistanceInMeters;
@@ -259,10 +259,10 @@ namespace GoToSpore.UI
             SaveCurrentDataLocally();
             UpdateUIAndGoals();
 
-            // حفظ دوري للسيرفر كل 10 خطوات للحفاظ على المزامنة
+            // حفظ دوري للسيرفر كل 10 خطوات للحفاظ على المزامنة دون التعطيل
             if (_steps % 10 == 0)
             {
-                await SyncDataToApiAsync();
+                _ = SyncDataToApiAsync();
             }
         }
 
@@ -352,7 +352,7 @@ namespace GoToSpore.UI
             }
         }
 
-        private async void OnLogoutClicked(object sender, EventArgs e)
+        private async void OnLogoutClicked(object? sender, EventArgs e)
         {
             Preferences.Default.Remove("auth_token");
             Preferences.Default.Remove("user_name");

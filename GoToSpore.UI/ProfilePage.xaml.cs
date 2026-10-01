@@ -1,9 +1,11 @@
 using Microsoft.Maui.Controls;
 using Microsoft.Maui.Storage;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
@@ -44,6 +46,7 @@ namespace GoToSpore.UI
                 string avatarPath = Preferences.Default.Get("user_avatar_path", string.Empty);
                 string avatarUrl = Preferences.Default.Get("user_avatar_url", string.Empty);
                 double localDistanceMeters = Preferences.Default.Get("saved_distance_meters", 0.0);
+                double localCalories = Preferences.Default.Get("saved_calories_burned", 0.0);
 
                 if (!string.IsNullOrEmpty(avatarPath) && File.Exists(avatarPath))
                 {
@@ -63,6 +66,7 @@ namespace GoToSpore.UI
                 double localKm = localDistanceMeters / 1000.0;
                 LblTotalDistance.Text = $"{localKm:F2} km";
                 LblDistanceMeters.Text = $"({localDistanceMeters:N0} m)";
+                LblCalories.Text = $"{localCalories:N0} kcal";
 
                 // 2. التحقق من وجود التوكن
                 string token = Preferences.Default.Get("auth_token", string.Empty);
@@ -102,15 +106,21 @@ namespace GoToSpore.UI
                             ImgAvatar.Source = profile.ImageUrl;
                         }
 
+                        // الدمج واختيار القيمة الأكبر بين السيرفر والمحلي
                         double finalDistanceMeters = Math.Max(profile.TotalDistanceMeters, localDistanceMeters);
+                        double finalCalories = Math.Max(profile.TotalCaloriesBurned, localCalories);
                         double totalKm = finalDistanceMeters / 1000.0;
                         
+                        // تحديث القيم المحفوظة محلياً لضمان عدم ضياعها
+                        Preferences.Default.Set("saved_distance_meters", finalDistanceMeters);
+                        Preferences.Default.Set("saved_calories_burned", finalCalories);
+
                         LblTotalDistance.Text = $"{totalKm:F2} km";
                         LblDistanceMeters.Text = $"({finalDistanceMeters:N0} m)";
 
                         LblMaxSpeed.Text = $"{profile.MaxSpeedKmh:F1} km/h";
                         LblTotalActivities.Text = profile.TotalActivities.ToString();
-                        LblCalories.Text = $"{profile.TotalCaloriesBurned:N0} kcal";
+                        LblCalories.Text = $"{finalCalories:N0} kcal";
                     }
                 }
                 else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
@@ -119,9 +129,9 @@ namespace GoToSpore.UI
                     await Navigation.PushModalAsync(new LoginPage());
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // التعامل مع انقطاع الاتصال
+                Debug.WriteLine($"[PROFILE LOAD ERROR]: {ex.Message}");
             }
         }
 
@@ -130,6 +140,10 @@ namespace GoToSpore.UI
             bool confirm = await DisplayAlert("Confirmation", "Are you sure you want to log out?", "Yes", "Cancel");
             if (confirm)
             {
+                // 1. إرسال أحدث قيمة مسافة وسعرات للسيرفر قبل مسح البيانات محلياً
+                await SyncStatsBeforeLogoutAsync();
+
+                // 2. مسح البيانات المحفوظة محلياً
                 ClearUserData();
 
                 ImgAvatar.Source = "appiconfg.png";
@@ -145,6 +159,40 @@ namespace GoToSpore.UI
             }
         }
 
+        private async Task SyncStatsBeforeLogoutAsync()
+        {
+            try
+            {
+                string token = Preferences.Default.Get("auth_token", string.Empty);
+                double localDistanceMeters = Preferences.Default.Get("saved_distance_meters", 0.0);
+                double localCalories = Preferences.Default.Get("saved_calories_burned", 0.0);
+
+                if (string.IsNullOrEmpty(token) || localDistanceMeters <= 0) return;
+
+                var payload = new
+                {
+                    distance_meters = localDistanceMeters,
+                    calories = localCalories,
+                    speed_kmh = 0.0
+                };
+
+                string json = JsonSerializer.Serialize(payload);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                using var request = new HttpRequestMessage(HttpMethod.Post, "api/user/stats")
+                {
+                    Content = content
+                };
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+                await httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[LOGOUT SYNC ERROR]: {ex.Message}");
+            }
+        }
+
         private void ClearUserData()
         {
             Preferences.Default.Remove("auth_token");
@@ -154,6 +202,7 @@ namespace GoToSpore.UI
             Preferences.Default.Remove("user_avatar_url");
             Preferences.Default.Remove("saved_steps_count");
             Preferences.Default.Remove("saved_distance_meters");
+            Preferences.Default.Remove("saved_calories_burned");
             Preferences.Default.Remove("saved_active_seconds");
         }
     }

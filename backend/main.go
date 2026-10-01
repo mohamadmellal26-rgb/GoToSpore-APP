@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,10 +11,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/websocket"
+	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/crypto/bcrypt"
 )
 
 var jwtSecret = []byte("super_secret_key_12345")
+var db *sql.DB
 
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
@@ -42,6 +45,12 @@ type LoginInput struct {
 	Password string `json:"password" binding:"required"`
 }
 
+type UserStatsInput struct {
+	DistanceMeters float64 `json:"distance_meters"`
+	Calories       float64 `json:"calories"`
+	SpeedKmh       float64 `json:"speed_kmh"`
+}
+
 type UserProfileResponse struct {
 	Username            string  `json:"username"`
 	FullName            string  `json:"full_name"`
@@ -52,11 +61,6 @@ type UserProfileResponse struct {
 	TotalActivities     int     `json:"total_activities"`
 	TotalCalories       float64 `json:"total_calories"`
 }
-
-var (
-	usersDb = make(map[string]User)
-	dbMutex sync.RWMutex
-)
 
 type Claims struct {
 	Username string `json:"username"`
@@ -119,7 +123,6 @@ func (h *LiveHub) Run() {
 				select {
 				case client.Send <- message:
 				default:
-					// إذا كانت القناة ممتلئة، يتم إغلاق العميل وتنظيفه
 					go func(c *Client) {
 						h.Unregister <- c
 					}(client)
@@ -162,6 +165,32 @@ func (c *Client) WritePump() {
 				return
 			}
 		}
+	}
+}
+
+// تهيئة قاعدة البيانات SQLite
+func initDB() {
+	var err error
+	db, err = sql.Open("sqlite3", "./gotospore.db")
+	if err != nil {
+		log.Fatalf("فشل في فتح قاعدة البيانات: %v", err)
+	}
+
+	createTableQuery := `
+	CREATE TABLE IF NOT EXISTS users (
+		username TEXT PRIMARY KEY,
+		password TEXT NOT NULL,
+		full_name TEXT,
+		image_url TEXT,
+		total_distance_meters REAL DEFAULT 0,
+		max_speed_kmh REAL DEFAULT 0,
+		total_activities INTEGER DEFAULT 0,
+		total_calories REAL DEFAULT 0
+	);`
+
+	_, err = db.Exec(createTableQuery)
+	if err != nil {
+		log.Fatalf("فشل في إنشاء جدول المستخدمين: %v", err)
 	}
 }
 
@@ -223,6 +252,9 @@ func AuthMiddleware() gin.HandlerFunc {
 }
 
 func main() {
+	initDB()
+	defer db.Close()
+
 	router := gin.Default()
 
 	liveHub := newLiveHub()
@@ -236,24 +268,28 @@ func main() {
 			return
 		}
 
-		dbMutex.Lock()
-		if _, exists := usersDb[newUser.Username]; exists {
-			dbMutex.Unlock()
+		var existingUser string
+		err := db.QueryRow("SELECT username FROM users WHERE username = ?", newUser.Username).Scan(&existingUser)
+		if err == nil {
 			c.JSON(http.StatusConflict, gin.H{"error": "اسم المستخدم مستخدم بالفعل"})
 			return
 		}
 
 		hashedPassword, err := hashPassword(newUser.Password)
 		if err != nil {
-			dbMutex.Unlock()
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "فشل في تشفير كلمة المرور"})
 			return
 		}
 
-		newUser.Password = hashedPassword
-		newUser.TotalDistanceKm = newUser.TotalDistanceMeters / 1000.0
-		usersDb[newUser.Username] = newUser
-		dbMutex.Unlock()
+		_, err = db.Exec(`
+			INSERT INTO users (username, password, full_name, image_url, total_distance_meters, max_speed_kmh, total_activities, total_calories) 
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+			newUser.Username, hashedPassword, newUser.FullName, newUser.ImageURL, newUser.TotalDistanceMeters, newUser.MaxSpeedKmh, newUser.TotalActivities, newUser.TotalCalories)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "فشل حفظ الحساب في قاعدة البيانات"})
+			return
+		}
 
 		c.JSON(http.StatusCreated, gin.H{"message": "تم إنشاء الحساب بنجاح"})
 	})
@@ -266,11 +302,11 @@ func main() {
 			return
 		}
 
-		dbMutex.RLock()
-		user, exists := usersDb[input.Username]
-		dbMutex.RUnlock()
+		var user User
+		err := db.QueryRow("SELECT username, password, full_name, image_url FROM users WHERE username = ?", input.Username).
+			Scan(&user.Username, &user.Password, &user.FullName, &user.ImageURL)
 
-		if !exists || !checkPasswordHash(input.Password, user.Password) {
+		if err != nil || !checkPasswordHash(input.Password, user.Password) {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "اسم المستخدم أو كلمة المرور غير صحيحة"})
 			return
 		}
@@ -287,7 +323,6 @@ func main() {
 			"username":  user.Username,
 			"full_name": user.FullName,
 			"user": gin.H{
-				"id":        user.ID,
 				"username":  user.Username,
 				"image_url": user.ImageURL,
 			},
@@ -317,24 +352,18 @@ func main() {
 	protected := router.Group("/api")
 	protected.Use(AuthMiddleware())
 	{
+		// الحصول على معلومات الملف الشخصي
 		protected.GET("/user/profile", func(c *gin.Context) {
-			usernameVal, exists := c.Get("username")
-			if !exists {
-				c.JSON(http.StatusUnauthorized, gin.H{"error": "غير مصرح"})
-				return
-			}
+			usernameVal, _ := c.Get("username")
+			username := usernameVal.(string)
 
-			username, ok := usernameVal.(string)
-			if !ok {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "خطأ في بيانات التوكن"})
-				return
-			}
+			var user User
+			err := db.QueryRow(`
+				SELECT username, full_name, image_url, total_distance_meters, max_speed_kmh, total_activities, total_calories 
+				FROM users WHERE username = ?`, username).
+				Scan(&user.Username, &user.FullName, &user.ImageURL, &user.TotalDistanceMeters, &user.MaxSpeedKmh, &user.TotalActivities, &user.TotalCalories)
 
-			dbMutex.RLock()
-			user, userExists := usersDb[username]
-			dbMutex.RUnlock()
-
-			if !userExists {
+			if err != nil {
 				c.JSON(http.StatusNotFound, gin.H{"error": "المستخدم غير موجود"})
 				return
 			}
@@ -349,6 +378,34 @@ func main() {
 				TotalActivities:     user.TotalActivities,
 				TotalCalories:       user.TotalCalories,
 			})
+		})
+
+		// حفظ الكيلومترات والمسافة المحفوظة محلياً عند المزامنة أو Logout
+		protected.POST("/user/stats", func(c *gin.Context) {
+			usernameVal, _ := c.Get("username")
+			username := usernameVal.(string)
+
+			var stats UserStatsInput
+			if err := c.ShouldBindJSON(&stats); err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "البيانات غير صالحة"})
+				return
+			}
+
+			// تحديث المسافة بحفظ القيمة الأعلى دائماً لتفادي ضياع الكيلومترات
+			_, err := db.Exec(`
+				UPDATE users 
+				SET total_distance_meters = MAX(total_distance_meters, ?),
+				    total_calories = MAX(total_calories, ?),
+				    max_speed_kmh = MAX(max_speed_kmh, ?)
+				WHERE username = ?`,
+				stats.DistanceMeters, stats.Calories, stats.SpeedKmh, username)
+
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "فشل تحديث البيانات"})
+				return
+			}
+
+			c.JSON(http.StatusOK, gin.H{"message": "تم حفظ الكيلومترات بنجاح"})
 		})
 	}
 

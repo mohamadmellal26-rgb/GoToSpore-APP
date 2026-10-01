@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("GoToSpore.UI")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0+e1d47110432ff364c0309ca479fea92ad3036dd5")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0+90762a1de76e0c79652da29b018c1c89f7f299be")]
 [assembly: System.Reflection.AssemblyProductAttribute("GoToSpore.UI")]
 [assembly: System.Reflection.AssemblyTitleAttribute("GoToSpore.UI")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
