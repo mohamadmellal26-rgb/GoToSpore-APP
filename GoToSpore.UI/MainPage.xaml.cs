@@ -1,6 +1,7 @@
 ﻿using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Controls;
 using Microsoft.Maui.Devices.Sensors;
+using Microsoft.Maui.Storage;
 using System;
 using System.Diagnostics;
 
@@ -10,9 +11,18 @@ namespace GoToSpore.UI
     {
         private int _steps = 0;
         private double _distanceInMeters = 0;
+        private int _activeSeconds = 0;
+
         private const double StepDistanceInMeters = 0.78;
         private const double ShakeThreshold = 2.5;
         private DateTime _lastShakeTime = DateTime.MinValue;
+
+        private const string KeySteps = "saved_steps_count";
+        private const string KeyDistance = "saved_distance_meters";
+        private const string KeyActiveSeconds = "saved_active_seconds";
+
+        private const double TargetRunningKm = 5.0;
+        private const int TargetWalkingMinutes = 30;
 
         public MainPage()
         {
@@ -23,18 +33,19 @@ namespace GoToSpore.UI
         {
             base.OnAppearing();
 
-            // 1. التحقق من وجود التوكن
+            // 1. التحقق من التوكن وقراءة بيانات المستخدم المحفوظة
             string authToken = Preferences.Default.Get("auth_token", string.Empty);
 
             if (string.IsNullOrEmpty(authToken))
             {
-                // إذا لم يكن مسجلاً، توجيهه لصفحة التسجيل/الدخول
-                // في MAUI يُفضل الانتقال لنفذة Navigation أو Modal
                 await Navigation.PushModalAsync(new LoginPage());
                 return;
             }
 
-            // 2. تشغيل الحساسات في حال كان مسجلاً
+            // 2. تحميل البيانات المحفوظة سابقاً
+            LoadSavedData();
+
+            // 3. تشغيل الحساسات
             ToggleAccelerometer(true);
         }
 
@@ -42,14 +53,28 @@ namespace GoToSpore.UI
         {
             base.OnDisappearing();
             ToggleAccelerometer(false);
+            SaveCurrentData();
         }
 
-        // دالة لتسجيل الخروج (يمكن استدعاؤها من زر الخروج في الواجهة)
-        private async void OnLogoutClicked(object sender, EventArgs e)
+        #region Data Persistence (Preferences)
+
+        private void LoadSavedData()
         {
-            Preferences.Default.Remove("auth_token");
-            await Navigation.PushModalAsync(new LoginPage());
+            _steps = Preferences.Default.Get(KeySteps, 0);
+            _distanceInMeters = Preferences.Default.Get(KeyDistance, 0.0);
+            _activeSeconds = Preferences.Default.Get(KeyActiveSeconds, 0);
+
+            UpdateUIAndGoals();
         }
+
+        private void SaveCurrentData()
+        {
+            Preferences.Default.Set(KeySteps, _steps);
+            Preferences.Default.Set(KeyDistance, _distanceInMeters);
+            Preferences.Default.Set(KeyActiveSeconds, _activeSeconds);
+        }
+
+        #endregion
 
         private void ToggleAccelerometer(bool enable)
         {
@@ -111,16 +136,32 @@ namespace GoToSpore.UI
         {
             var data = e.Reading;
             double gForce = Math.Sqrt(data.Acceleration.X * data.Acceleration.X +
-                                      data.Acceleration.Y * data.Acceleration.Y +
-                                      data.Acceleration.Z * data.Acceleration.Z);
+                                     data.Acceleration.Y * data.Acceleration.Y +
+                                     data.Acceleration.Z * data.Acceleration.Z);
 
-            if (gForce > ShakeThreshold && (DateTime.Now - _lastShakeTime).TotalMilliseconds > 300)
+            if (gForce > ShakeThreshold)
             {
-                _lastShakeTime = DateTime.Now;
-                MainThread.BeginInvokeOnMainThread(() =>
+                var now = DateTime.Now;
+                var timeDiff = (now - _lastShakeTime).TotalMilliseconds;
+
+                if (timeDiff > 300)
                 {
-                    AddStepAndDistance(1);
-                });
+                    if (_lastShakeTime != DateTime.MinValue && timeDiff < 2000)
+                    {
+                        _activeSeconds += (int)(timeDiff / 1000);
+                    }
+                    else
+                    {
+                        _activeSeconds += 1;
+                    }
+
+                    _lastShakeTime = now;
+
+                    MainThread.BeginInvokeOnMainThread(() =>
+                    {
+                        AddStepAndDistance(1);
+                    });
+                }
             }
         }
 
@@ -129,27 +170,37 @@ namespace GoToSpore.UI
             _steps += stepIncrement;
             _distanceInMeters += stepIncrement * StepDistanceInMeters;
 
+            SaveCurrentData();
+            UpdateUIAndGoals();
+        }
+
+        private void UpdateUIAndGoals()
+        {
             double distanceInKm = _distanceInMeters / 1000.0;
+            double activeMinutes = _activeSeconds / 60.0;
 
             if (StepsLabel != null) StepsLabel.Text = _steps.ToString("N0");
             if (MetersLabel != null) MetersLabel.Text = $"{_distanceInMeters:F0} m";
             if (KmLabel != null) KmLabel.Text = distanceInKm.ToString("F2");
 
-            try
-            {
-                SemanticScreenReader.Announce($"المسافة الآن {_distanceInMeters:F0} متر، أي ما يعادل {distanceInKm:F2} كيلومتر");
-            }
-            catch { }
+            if (RunGoalLabel != null) RunGoalLabel.Text = $"{distanceInKm:F2} / {TargetRunningKm} km";
+            if (RunProgressBar != null) RunProgressBar.Progress = Math.Min(distanceInKm / TargetRunningKm, 1.0);
+
+            if (WalkGoalLabel != null) WalkGoalLabel.Text = $"{(int)activeMinutes} / {TargetWalkingMinutes} min";
+            if (WalkProgressBar != null) WalkProgressBar.Progress = Math.Min(activeMinutes / TargetWalkingMinutes, 1.0);
         }
 
         private void ResetTracker()
         {
             _steps = 0;
             _distanceInMeters = 0;
+            _activeSeconds = 0;
 
-            if (StepsLabel != null) StepsLabel.Text = "0";
-            if (MetersLabel != null) MetersLabel.Text = "0 m";
-            if (KmLabel != null) KmLabel.Text = "0.00";
+            Preferences.Default.Remove(KeySteps);
+            Preferences.Default.Remove(KeyDistance);
+            Preferences.Default.Remove(KeyActiveSeconds);
+
+            UpdateUIAndGoals();
         }
 
         #region XAML Event Handlers
@@ -181,11 +232,20 @@ namespace GoToSpore.UI
                 await element.ScaleTo(1.0, 100);
             }
 
-            bool reset = await DisplayAlert("إعادة ضبط", "هل تريد إعادة تعيين العداد وإعادة حساب المسافة من جديد؟", "نعم", "إلغاء");
+            bool reset = await DisplayAlert("إعادة ضبط", "هل تريد إعادة تعيين العداد وإلغاء جميع البيانات المحفوظة والبدء من جديد؟", "نعم", "إلغاء");
             if (reset)
             {
                 ResetTracker();
             }
+        }
+
+        private async void OnLogoutClicked(object sender, EventArgs e)
+        {
+            Preferences.Default.Remove("auth_token");
+            Preferences.Default.Remove("user_name");
+            Preferences.Default.Remove("full_name");
+
+            await Navigation.PushModalAsync(new LoginPage());
         }
 
         #endregion

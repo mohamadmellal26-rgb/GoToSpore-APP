@@ -42,15 +42,6 @@ namespace GoToSpore.UI
             set => SetValue(ActivitiesColorProperty, value);
         }
 
-        public static readonly BindableProperty LiveColorProperty =
-            BindableProperty.Create(nameof(LiveColor), typeof(Color), typeof(CustomNavBar), Color.FromArgb("#737373"));
-
-        public Color LiveColor
-        {
-            get => (Color)GetValue(LiveColorProperty);
-            set => SetValue(LiveColorProperty, value);
-        }
-
         public static readonly BindableProperty ProfileColorProperty =
             BindableProperty.Create(nameof(ProfileColor), typeof(Color), typeof(CustomNavBar), Color.FromArgb("#737373"));
 
@@ -74,7 +65,6 @@ namespace GoToSpore.UI
         public CustomNavBar()
         {
             InitializeComponent();
-            // لضمان أن عناصر XAML داخل الشريط تقرأ من المكون نفسه وليس من ViewModel الصفحة
             Content.BindingContext = this;
             UpdateTabColors();
         }
@@ -91,11 +81,9 @@ namespace GoToSpore.UI
         {
             Color activeColor = Color.FromArgb("#EAB308");
             Color inactiveColor = Color.FromArgb("#737373");
-            Color liveActiveColor = Color.FromArgb("#EF4444");
 
             HomeColor = ActiveTab == "Home" ? activeColor : inactiveColor;
             ActivitiesColor = ActiveTab == "Activities" ? activeColor : inactiveColor;
-            LiveColor = ActiveTab == "Live" ? liveActiveColor : inactiveColor;
             ProfileColor = ActiveTab == "Profile" ? activeColor : inactiveColor;
             SettingsColor = ActiveTab == "Settings" ? activeColor : inactiveColor;
         }
@@ -112,12 +100,6 @@ namespace GoToSpore.UI
         {
             if (ActiveTab == "Activities") return;
             await NavigateToTabAsync(sender, "//ActivitiesPage", () => new ActivitiesPage());
-        }
-
-        private async void OnLiveTabTapped(object sender, EventArgs e)
-        {
-            if (ActiveTab == "Live") return;
-            await NavigateToTabAsync(sender, "//LivePage", () => new LivePage());
         }
 
         private async void OnProfileTapped(object sender, EventArgs e)

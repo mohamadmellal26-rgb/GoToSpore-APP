@@ -1,55 +1,99 @@
 using Microsoft.Maui.Controls;
+using Microsoft.Maui.Graphics;
+using Microsoft.Maui.Media;
 using Microsoft.Maui.Storage;
 using System;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 
 namespace GoToSpore.UI
 {
     public partial class LoginPage : ContentPage
     {
         private bool isRegisterMode = false;
+        private string? selectedAvatarPath = null;
 
         private static readonly HttpClient httpClient = new HttpClient
         {
-            // للأجهزة الحقيقية أو المحاكي (10.0.2.2 لأندرويد محاكي)
-            BaseAddress = new Uri("http://10.0.2.2:8080/")
+            BaseAddress = new Uri("https://gotospore-server.onrender.com/"),
+            Timeout = TimeSpan.FromSeconds(60)
+        };
+
+        private static readonly JsonSerializerOptions jsonOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
         };
 
         public LoginPage()
         {
             InitializeComponent();
+
+            Microsoft.Maui.Handlers.EntryHandler.Mapper.AppendToMapping("RemoveEntryBorders", (handler, view) =>
+            {
+#if ANDROID
+                handler.PlatformView.BackgroundTintList = Android.Content.Res.ColorStateList.ValueOf(Android.Graphics.Color.Transparent);
+#elif WINDOWS
+                handler.PlatformView.BorderThickness = new Microsoft.UI.Xaml.Thickness(0);
+#endif
+            });
         }
 
-        private void BtnToggleMode_Click(object sender, EventArgs e)
+        private async void OnPickAvatarTapped(object? sender, EventArgs e)
+        {
+            try
+            {
+                var result = await MediaPicker.PickPhotoAsync(new MediaPickerOptions
+                {
+                    Title = "Choose Profile Picture"
+                });
+
+                if (result != null)
+                {
+                    selectedAvatarPath = result.FullPath;
+                    ImgAvatarPreview.Source = ImageSource.FromFile(selectedAvatarPath);
+                    Preferences.Default.Set("user_avatar_path", selectedAvatarPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowStatus($"Failed to pick image: {ex.Message}", isError: true);
+            }
+        }
+
+        private void BtnToggleMode_Click(object? sender, EventArgs? e)
         {
             isRegisterMode = !isRegisterMode;
             TxtStatus.Text = string.Empty;
 
+            LayoutAvatarSelection.IsVisible = isRegisterMode;
+            LayoutFullName.IsVisible = isRegisterMode;
+
             if (isRegisterMode)
             {
-                TxtTitle.Text = "إنشاء حساب جديد";
-                BtnSubmit.Text = "إنشاء الحساب";
-                BtnToggleMode.Text = "لديك حساب بالفعل؟ تسجيل الدخول";
+                TxtTitle.Text = "Create a new account";
+                BtnSubmit.Text = "Sign Up";
+                BtnToggleMode.Text = "Already have an account? Log In";
             }
             else
             {
-                TxtTitle.Text = "تسجيل الدخول إلى حسابك";
-                BtnSubmit.Text = "تسجيل الدخول";
-                BtnToggleMode.Text = "ليس لديك حساب؟ إنشاء حساب جديد";
+                TxtTitle.Text = "Log in to your account";
+                BtnSubmit.Text = "Log In";
+                BtnToggleMode.Text = "Don't have an account? Sign Up";
             }
         }
 
         private async void BtnSubmit_Click(object sender, EventArgs e)
         {
-            string username = TxtUsername.Text?.Trim() ?? "";
-            string password = TxtPassword.Text ?? "";
+            string username = TxtUsername.Text?.Trim() ?? string.Empty;
+            string password = TxtPassword.Text ?? string.Empty;
+            string fullName = TxtFullName.Text?.Trim() ?? string.Empty;
 
             if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
             {
-                ShowStatus("يرجى إدخال اسم المستخدم وكلمة المرور.", isError: true);
+                ShowStatus("Please enter username and password.", isError: true);
                 return;
             }
 
@@ -57,9 +101,12 @@ namespace GoToSpore.UI
 
             try
             {
-                var payloadData = new { username = username, password = password };
+                var payloadData = isRegisterMode 
+                    ? new { username = username, password = password, full_name = fullName }
+                    : (object)new { username = username, password = password };
+
                 string jsonPayload = JsonSerializer.Serialize(payloadData);
-                var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+                using var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
 
                 string endpoint = isRegisterMode ? "api/register" : "api/login";
 
@@ -70,40 +117,90 @@ namespace GoToSpore.UI
                 {
                     if (isRegisterMode)
                     {
-                        ShowStatus("تم إنشاء الحساب بنجاح! يمكنك الآن تسجيل الدخول.", isError: false);
-                        BtnToggleMode_Click(null, null);
+                        if (!string.IsNullOrEmpty(fullName))
+                        {
+                            Preferences.Default.Set("full_name", fullName);
+                        }
+                        if (!string.IsNullOrEmpty(selectedAvatarPath))
+                        {
+                            Preferences.Default.Set("user_avatar_path", selectedAvatarPath);
+                        }
+
+                        ShowStatus("Account created successfully! You can now log in.", isError: false);
+                        BtnToggleMode_Click(this, EventArgs.Empty);
                     }
                     else
                     {
-                        var result = JsonSerializer.Deserialize<AuthResponse>(responseBody);
+                        var result = JsonSerializer.Deserialize<AuthResponse>(responseBody, jsonOptions);
 
-                        // حفظ التوكن بشكل دائم في الجهاز
-                        if (!string.IsNullOrEmpty(result?.Token))
+                        string token = result?.Token ?? result?.AccessToken ?? string.Empty;
+
+                        if (!string.IsNullOrEmpty(token))
                         {
-                            Preferences.Default.Set("auth_token", result.Token);
+                            Preferences.Default.Set("auth_token", token);
+
+                            string savedUsername = !string.IsNullOrEmpty(result?.Username) ? result.Username : username;
+                            Preferences.Default.Set("user_name", savedUsername);
+
+                            if (!string.IsNullOrEmpty(result?.FullName))
+                            {
+                                Preferences.Default.Set("full_name", result.FullName);
+                            }
                         }
 
-                        // العودة إلى MainPage وإغلاق صفحة التسجيل
-                        await Navigation.PopModalAsync();
+                        await NavigateAfterLoginAsync();
                     }
                 }
                 else
                 {
-                    var errorResult = JsonSerializer.Deserialize<ErrorResponse>(responseBody);
-                    ShowStatus(errorResult?.Error ?? "فشلت العملية.", isError: true);
+                    string errorMessage = "Operation failed.";
+                    try
+                    {
+                        var errorResult = JsonSerializer.Deserialize<ErrorResponse>(responseBody, jsonOptions);
+                        if (!string.IsNullOrEmpty(errorResult?.Error))
+                            errorMessage = errorResult.Error;
+                        else if (!string.IsNullOrEmpty(errorResult?.Message))
+                            errorMessage = errorResult.Message;
+                    }
+                    catch
+                    {
+                        errorMessage = $"Server error ({ (int)response.StatusCode })";
+                    }
+
+                    ShowStatus(errorMessage, isError: true);
                 }
             }
-            catch (HttpRequestException)
+            catch (TaskCanceledException)
             {
-                ShowStatus("تعذر الاتصال بالسيرفر. تأكد من تشغيل سيرفر Go.", isError: true);
+                ShowStatus("Server request timed out (waking up Render instance). Please try again.", isError: true);
+            }
+            catch (HttpRequestException ex)
+            {
+                ShowStatus($"Cannot connect to server: {ex.Message}", isError: true);
             }
             catch (Exception ex)
             {
-                ShowStatus($"حدث خطأ: {ex.Message}", isError: true);
+                ShowStatus($"An unexpected error occurred: {ex.Message}", isError: true);
             }
             finally
             {
                 SetLoadingState(isLoading: false);
+            }
+        }
+
+        private async Task NavigateAfterLoginAsync()
+        {
+            if (Navigation.ModalStack.Count > 0)
+            {
+                await Navigation.PopModalAsync();
+            }
+            else if (Navigation.NavigationStack.Count > 1)
+            {
+                await Navigation.PopAsync();
+            }
+            else
+            {
+                Application.Current!.MainPage = new ProfilePage();
             }
         }
 
@@ -113,7 +210,7 @@ namespace GoToSpore.UI
             BtnToggleMode.IsEnabled = !isLoading;
             LoadingBar.IsRunning = isLoading;
             LoadingBar.IsVisible = isLoading;
-            TxtStatus.Text = string.Empty;
+            if (isLoading) TxtStatus.Text = "Connecting to server...";
         }
 
         private void ShowStatus(string message, bool isError)
@@ -126,15 +223,27 @@ namespace GoToSpore.UI
     public class AuthResponse
     {
         [JsonPropertyName("message")]
-        public string Message { get; set; }
+        public string? Message { get; set; }
 
         [JsonPropertyName("token")]
-        public string Token { get; set; }
+        public string? Token { get; set; }
+
+        [JsonPropertyName("access_token")]
+        public string? AccessToken { get; set; }
+
+        [JsonPropertyName("username")]
+        public string? Username { get; set; }
+
+        [JsonPropertyName("full_name")]
+        public string? FullName { get; set; }
     }
 
     public class ErrorResponse
     {
         [JsonPropertyName("error")]
-        public string Error { get; set; }
+        public string? Error { get; set; }
+
+        [JsonPropertyName("message")]
+        public string? Message { get; set; }
     }
 }

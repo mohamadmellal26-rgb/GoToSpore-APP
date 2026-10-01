@@ -25,16 +25,25 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-// هيكل نموذج بيانات المستخدم
+// هيكل نموذج بيانات المستخدم (تمت إضافة ImageURL)
 type User struct {
 	ID       string `json:"id"`
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
+	ImageURL string `json:"image_url"` // رابط صورة المستخدم أو الصورة الرمزية
+}
+
+// استجابة بيانات الملف الشخصي (بدون كلمة المرور لأسباب أمنية)
+type UserProfileResponse struct {
+	ID       string `json:"id"`
+	Username string `json:"username"`
+	ImageURL string `json:"image_url"`
 }
 
 // قاعدة بيانات مؤقتة في الذاكرة (In-Memory Database)
+// Key: Username, Value: User struct
 var (
-	usersDb = make(map[string]string) // Key: Username, Value: Hashed Password
+	usersDb = make(map[string]User)
 	dbMutex sync.RWMutex
 )
 
@@ -241,7 +250,10 @@ func main() {
 			return
 		}
 
-		usersDb[newUser.Username] = hashedPassword
+		// حفظ البيانات الشاملة للمستخدم متضمنة رابط الصورة
+		newUser.Password = hashedPassword
+		usersDb[newUser.Username] = newUser
+
 		c.JSON(http.StatusCreated, gin.H{"message": "تم إنشاء الحساب بنجاح"})
 	})
 
@@ -254,15 +266,15 @@ func main() {
 		}
 
 		dbMutex.RLock()
-		storedHash, exists := usersDb[inputUser.Username]
+		user, exists := usersDb[inputUser.Username]
 		dbMutex.RUnlock()
 
-		if !exists || !checkPasswordHash(inputUser.Password, storedHash) {
+		if !exists || !checkPasswordHash(inputUser.Password, user.Password) {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "اسم المستخدم أو كلمة المرور غير صحيحة"})
 			return
 		}
 
-		token, err := generateToken(inputUser.Username)
+		token, err := generateToken(user.Username)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "فشل في إنشاء التوكن"})
 			return
@@ -271,6 +283,11 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{
 			"message": "تم تسجيل الدخول بنجاح",
 			"token":   token,
+			"user": gin.H{
+				"id":        user.ID,
+				"username":  user.Username,
+				"image_url": user.ImageURL,
+			},
 		})
 	})
 
@@ -299,12 +316,26 @@ func main() {
 	protected.Use(AuthMiddleware())
 	{
 		protected.GET("/profile", func(c *gin.Context) {
-    username, _ := c.Get("username")
-    c.JSON(http.StatusOK, gin.H{ // ✅ StatusOK صحيحة (OK بالحروف الكبيرة)
-        "message":  "مرحباً بك في المنطقة المحمية",
-        "username": username,
-    })
-})
+			username, _ := c.Get("username")
+
+			dbMutex.RLock()
+			user, exists := usersDb[username.(string)]
+			dbMutex.RUnlock()
+
+			if !exists {
+				c.JSON(http.StatusNotFound, gin.H{"error": "المستخدم غير موجود"})
+				return
+			}
+
+			c.JSON(http.StatusOK, gin.H{
+				"message": "مرحباً بك في المنطقة المحمية",
+				"user": UserProfileResponse{
+					ID:       user.ID,
+					Username: user.Username,
+					ImageURL: user.ImageURL,
+				},
+			})
+		})
 	}
 
 	log.Println("Server running on http://localhost:8080")

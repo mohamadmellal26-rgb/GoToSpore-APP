@@ -1,9 +1,186 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:GoToSpore.UI"
              x:Class="GoToSpore.UI.ProfilePage"
-             Title="ProfilePage">
-    <VerticalStackLayout VerticalOptions="Center">
-        <Label Text="Profile Page" HorizontalOptions="Center" />
-    </VerticalStackLayout>
+             Title="Profile"
+             BackgroundColor="#FFFFFF"
+             Shell.NavBarIsVisible="False"
+             FlowDirection="LeftToRight">
+
+    <Grid RowDefinitions="*, Auto">
+
+        <!-- Scrollable content -->
+        <ScrollView Grid.Row="0">
+            <VerticalStackLayout Padding="20" Spacing="20">
+
+                <!-- Header: Profile Image and User Information -->
+                <VerticalStackLayout Spacing="10" HorizontalOptions="Center" Margin="0,10,0,0">
+                    <Border StrokeThickness="2"
+                            Stroke="#F97316"
+                            HeightRequest="100"
+                            WidthRequest="100"
+                            HorizontalOptions="Center"
+                            BackgroundColor="#FFFFFF">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="50" />
+                        </Border.StrokeShape>
+                        <Image x:Name="ImgAvatar"
+                               Source="appiconfg.png"
+                               Aspect="AspectFill"
+                               HeightRequest="96"
+                               WidthRequest="96"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Center" />
+                    </Border>
+
+                    <!-- Full Name -->
+                    <Label x:Name="LblFullName"
+                           Text="Loading..."
+                           TextColor="#333333"
+                           FontSize="22"
+                           FontAttributes="Bold"
+                           HorizontalOptions="Center" />
+
+                    <!-- Username -->
+                    <Label x:Name="LblUsername"
+                           Text="@username"
+                           TextColor="#333333"
+                           Opacity="0.7"
+                           FontSize="14"
+                           HorizontalOptions="Center" />
+
+                    <!-- Badge -->
+                    <Border BackgroundColor="#FFFFFF"
+                            StrokeThickness="1"
+                            Stroke="#F97316"
+                            Padding="12,4"
+                            HorizontalOptions="Center"
+                            Margin="0,5,0,0">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="20" />
+                        </Border.StrokeShape>
+                        <Label Text="PRO ATHLETE ⚡"
+                               TextColor="#F97316"
+                               FontSize="12"
+                               FontAttributes="Bold" />
+                    </Border>
+                </VerticalStackLayout>
+
+                <!-- Section: Performance Statistics -->
+                <Label Text="Performance Stats"
+                       TextColor="#333333"
+                       FontSize="18"
+                       FontAttributes="Bold"
+                       Margin="0,10,0,0" />
+
+                <!-- Stats Grid -->
+                <Grid ColumnDefinitions="*, *" ColumnSpacing="12" RowDefinitions="Auto, Auto" RowSpacing="12">
+
+                    <!-- Card: Total Distance -->
+                    <Border Grid.Row="0" Grid.Column="0"
+                            BackgroundColor="#FFFFFF"
+                            Stroke="#333333"
+                            StrokeThickness="1"
+                            Padding="15">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="16" />
+                        </Border.StrokeShape>
+                        <VerticalStackLayout Spacing="5">
+                            <Label Text="Total Distance" TextColor="#333333" Opacity="0.7" FontSize="12" FontAttributes="Bold" />
+                            <Label x:Name="LblTotalDistance"
+                                   Text="0.0 km"
+                                   TextColor="#F97316"
+                                   FontSize="20"
+                                   FontAttributes="Bold" />
+                            <Label x:Name="LblDistanceMeters"
+                                   Text="(0 m)"
+                                   TextColor="#333333"
+                                   Opacity="0.5"
+                                   FontSize="11" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Card: Max Speed -->
+                    <Border Grid.Row="0" Grid.Column="1"
+                            BackgroundColor="#FFFFFF"
+                            Stroke="#333333"
+                            StrokeThickness="1"
+                            Padding="15">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="16" />
+                        </Border.StrokeShape>
+                        <VerticalStackLayout Spacing="5">
+                            <Label Text="Max Speed" TextColor="#333333" Opacity="0.7" FontSize="12" FontAttributes="Bold" />
+                            <Label x:Name="LblMaxSpeed"
+                                   Text="0.0 km/h"
+                                   TextColor="#10B981"
+                                   FontSize="20"
+                                   FontAttributes="Bold" />
+                            <Label Text="Top running pace" TextColor="#333333" Opacity="0.5" FontSize="11" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Card: Completed Activities -->
+                    <Border Grid.Row="1" Grid.Column="0"
+                            BackgroundColor="#FFFFFF"
+                            Stroke="#333333"
+                            StrokeThickness="1"
+                            Padding="15">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="16" />
+                        </Border.StrokeShape>
+                        <VerticalStackLayout Spacing="5">
+                            <Label Text="Activities" TextColor="#333333" Opacity="0.7" FontSize="12" FontAttributes="Bold" />
+                            <Label x:Name="LblTotalActivities"
+                                   Text="0"
+                                   TextColor="#3B82F6"
+                                   FontSize="20"
+                                   FontAttributes="Bold" />
+                            <Label Text="Sessions completed" TextColor="#333333" Opacity="0.5" FontSize="11" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Card: Calories Burned -->
+                    <Border Grid.Row="1" Grid.Column="1"
+                            BackgroundColor="#FFFFFF"
+                            Stroke="#333333"
+                            StrokeThickness="1"
+                            Padding="15">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="16" />
+                        </Border.StrokeShape>
+                        <VerticalStackLayout Spacing="5">
+                            <Label Text="Calories Burned" TextColor="#333333" Opacity="0.7" FontSize="12" FontAttributes="Bold" />
+                            <Label x:Name="LblCalories"
+                                   Text="0 kcal"
+                                   TextColor="#F59E0B"
+                                   FontSize="20"
+                                   FontAttributes="Bold" />
+                            <Label Text="Estimated total" TextColor="#333333" Opacity="0.5" FontSize="11" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                </Grid>
+
+                <!-- Logout Button -->
+                <Button x:Name="BtnLogout"
+                        Text="Log Out"
+                        BackgroundColor="#FEF2F2"
+                        TextColor="#EF4444"
+                        BorderColor="#EF4444"
+                        BorderWidth="1"
+                        CornerRadius="12"
+                        FontAttributes="Bold"
+                        HeightRequest="48"
+                        Margin="0,20,0,10"
+                        Clicked="BtnLogout_Clicked" />
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- Custom Bottom Navigation Bar -->
+        <controls:CustomNavBar Grid.Row="1" ActiveTab="Profile" FlowDirection="LeftToRight" />
+
+    </Grid>
 </ContentPage>

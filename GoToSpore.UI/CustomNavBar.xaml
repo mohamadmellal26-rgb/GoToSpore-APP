@@ -2,7 +2,8 @@
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="GoToSpore.UI.CustomNavBar"
-             x:Name="self">
+             x:Name="self"
+             FlowDirection="LeftToRight">
 
     <Border BackgroundColor="#1E1E1E"
             Stroke="#2A2A2A"
@@ -13,9 +14,10 @@
             <RoundRectangle CornerRadius="0" />
         </Border.StrokeShape>
 
-        <Grid ColumnDefinitions="*, *, *, *, *"
+        <Grid ColumnDefinitions="*, *, *, *"
               HorizontalOptions="Fill"
-              VerticalOptions="Fill">
+              VerticalOptions="Fill"
+              FlowDirection="LeftToRight">
 
             <!-- Home Tab -->
             <Grid Grid.Column="0" BackgroundColor="Transparent" InputTransparent="False">
@@ -49,24 +51,8 @@
                 </VerticalStackLayout>
             </Grid>
 
-            <!-- Live Tab -->
-            <Grid Grid.Column="2" BackgroundColor="Transparent" InputTransparent="False">
-                <Grid.GestureRecognizers>
-                    <TapGestureRecognizer Tapped="OnLiveTabTapped" NumberOfTapsRequired="1" />
-                </Grid.GestureRecognizers>
-                <VerticalStackLayout VerticalOptions="Center" HorizontalOptions="Center" Spacing="4" InputTransparent="True">
-                    <Path Data="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"
-                          Fill="{Binding LiveColor, Source={x:Reference self}}"
-                          Aspect="Uniform"
-                          HeightRequest="22"
-                          WidthRequest="22"
-                          HorizontalOptions="Center" />
-                    <Label Text="Live" FontSize="11" TextColor="{Binding LiveColor, Source={x:Reference self}}" HorizontalOptions="Center" />
-                </VerticalStackLayout>
-            </Grid>
-
             <!-- Profile Tab -->
-            <Grid Grid.Column="3" BackgroundColor="Transparent" InputTransparent="False">
+            <Grid Grid.Column="2" BackgroundColor="Transparent" InputTransparent="False">
                 <Grid.GestureRecognizers>
                     <TapGestureRecognizer Tapped="OnProfileTapped" NumberOfTapsRequired="1" />
                 </Grid.GestureRecognizers>
@@ -82,7 +68,7 @@
             </Grid>
 
             <!-- Settings Tab -->
-            <Grid Grid.Column="4" BackgroundColor="Transparent" InputTransparent="False">
+            <Grid Grid.Column="3" BackgroundColor="Transparent" InputTransparent="False">
                 <Grid.GestureRecognizers>
                     <TapGestureRecognizer Tapped="OnSettingsTabTapped" NumberOfTapsRequired="1" />
                 </Grid.GestureRecognizers>

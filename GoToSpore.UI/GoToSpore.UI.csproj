@@ -16,7 +16,7 @@
         <Nullable>enable</Nullable>
 
         <!-- Display name -->
-        <ApplicationTitle>GoToSpore.UI</ApplicationTitle>
+        <ApplicationTitle>GoToSpore</ApplicationTitle>
 
         <!-- App Identifier -->
         <ApplicationId>com.companyname.gotospore.ui</ApplicationId>
@@ -38,6 +38,8 @@
 
         <!-- Images -->
         <MauiImage Include="Resources\Images\*" />
+        <!-- تضمين باقي الصور الموجودة في مجلد AppIcon لاستخدامها كصور عادية -->
+        <MauiImage Include="Resources\AppIcon\*" Exclude="Resources\AppIcon\appicon.svg;Resources\AppIcon\appiconfg.svg" />
         <MauiImage Update="Resources\Images\dotnet_bot.png" Resize="True" BaseSize="300,185" />
 
         <!-- Custom Fonts -->

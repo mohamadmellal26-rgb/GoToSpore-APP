@@ -7,7 +7,6 @@ public partial class AppShell : Shell
         InitializeComponent();
 
         Routing.RegisterRoute("ActivitiesPage", typeof(ActivitiesPage));
-        Routing.RegisterRoute("LivePage", typeof(LivePage));
         Routing.RegisterRoute("ProfilePage", typeof(ProfilePage));
         Routing.RegisterRoute("SettingsPage", typeof(SettingsPage));
     }
