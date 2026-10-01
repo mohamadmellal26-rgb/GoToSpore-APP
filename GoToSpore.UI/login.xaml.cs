@@ -3,6 +3,7 @@ using Microsoft.Maui.Graphics;
 using Microsoft.Maui.Media;
 using Microsoft.Maui.Storage;
 using System;
+using System.IO;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -101,8 +102,22 @@ namespace GoToSpore.UI
 
             try
             {
+                string? avatarBase64 = null;
+
+                // إذا كنا في وضع التسجيل وتم اختيار صورة، تحويلها إلى Base64
+                if (isRegisterMode && !string.IsNullOrEmpty(selectedAvatarPath) && File.Exists(selectedAvatarPath))
+                {
+                    avatarBase64 = await ConvertImageToBase64Async(selectedAvatarPath);
+                }
+
                 var payloadData = isRegisterMode 
-                    ? new { username = username, password = password, full_name = fullName }
+                    ? new 
+                      { 
+                          username = username, 
+                          password = password, 
+                          full_name = fullName,
+                          image_url = avatarBase64 ?? string.Empty // إرسال الصورة كسلسلة Base64 أو فارغة
+                      }
                     : (object)new { username = username, password = password };
 
                 string jsonPayload = JsonSerializer.Serialize(payloadData);
@@ -146,6 +161,12 @@ namespace GoToSpore.UI
                             {
                                 Preferences.Default.Set("full_name", result.FullName);
                             }
+
+                            // حفظ رابط الصورة المسترجع من السيرفر إذا وُجد
+                            if (result?.User?.ImageUrl != null)
+                            {
+                                Preferences.Default.Set("user_avatar_url", result.User.ImageUrl);
+                            }
                         }
 
                         await NavigateAfterLoginAsync();
@@ -164,7 +185,7 @@ namespace GoToSpore.UI
                     }
                     catch
                     {
-                        errorMessage = $"Server error ({ (int)response.StatusCode })";
+                        errorMessage = $"Server error ({(int)response.StatusCode})";
                     }
 
                     ShowStatus(errorMessage, isError: true);
@@ -185,6 +206,34 @@ namespace GoToSpore.UI
             finally
             {
                 SetLoadingState(isLoading: false);
+            }
+        }
+
+        /// <summary>
+        /// دالة تحويل مسار الصورة المحلي إلى Data URI Base64 String
+        /// </summary>
+        private async Task<string> ConvertImageToBase64Async(string filePath)
+        {
+            try
+            {
+                byte[] imageBytes = await File.ReadAllBytesAsync(filePath);
+                string base64String = Convert.ToBase64String(imageBytes);
+                
+                // تحديد نوع امتداد الصورة للـ Data URI
+                string extension = Path.GetExtension(filePath).ToLowerInvariant();
+                string mimeType = extension switch
+                {
+                    ".png" => "image/png",
+                    ".gif" => "image/gif",
+                    ".webp" => "image/webp",
+                    _ => "image/jpeg"
+                };
+
+                return $"data:{mimeType};base64,{base64String}";
+            }
+            catch
+            {
+                return string.Empty;
             }
         }
 
@@ -220,6 +269,18 @@ namespace GoToSpore.UI
         }
     }
 
+    public class UserDto
+    {
+        [JsonPropertyName("id")]
+        public string? Id { get; set; }
+
+        [JsonPropertyName("username")]
+        public string? Username { get; set; }
+
+        [JsonPropertyName("image_url")]
+        public string? ImageUrl { get; set; }
+    }
+
     public class AuthResponse
     {
         [JsonPropertyName("message")]
@@ -236,6 +297,9 @@ namespace GoToSpore.UI
 
         [JsonPropertyName("full_name")]
         public string? FullName { get; set; }
+
+        [JsonPropertyName("user")]
+        public UserDto? User { get; set; }
     }
 
     public class ErrorResponse

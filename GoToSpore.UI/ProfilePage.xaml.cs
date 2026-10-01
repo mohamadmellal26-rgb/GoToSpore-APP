@@ -38,15 +38,20 @@ namespace GoToSpore.UI
         {
             try
             {
-                // 1. Read directly from local preferences
+                // 1. القراءة أولاً من البيانات المحفوظة محلياً
                 string savedUsername = Preferences.Default.Get("user_name", string.Empty);
                 string savedFullName = Preferences.Default.Get("full_name", string.Empty);
                 string avatarPath = Preferences.Default.Get("user_avatar_path", string.Empty);
+                string avatarUrl = Preferences.Default.Get("user_avatar_url", string.Empty);
                 double localDistanceMeters = Preferences.Default.Get("saved_distance_meters", 0.0);
 
                 if (!string.IsNullOrEmpty(avatarPath) && File.Exists(avatarPath))
                 {
                     ImgAvatar.Source = ImageSource.FromFile(avatarPath);
+                }
+                else if (!string.IsNullOrEmpty(avatarUrl))
+                {
+                    ImgAvatar.Source = avatarUrl;
                 }
 
                 if (!string.IsNullOrEmpty(savedUsername))
@@ -59,7 +64,7 @@ namespace GoToSpore.UI
                 LblTotalDistance.Text = $"{localKm:F2} km";
                 LblDistanceMeters.Text = $"({localDistanceMeters:N0} m)";
 
-                // 2. Validate token
+                // 2. التحقق من وجود التوكن
                 string token = Preferences.Default.Get("auth_token", string.Empty);
 
                 if (string.IsNullOrEmpty(token))
@@ -68,7 +73,7 @@ namespace GoToSpore.UI
                     return;
                 }
 
-                // 3. Fetch server data
+                // 3. جلب البيانات الحديثة من السيرفر
                 using var request = new HttpRequestMessage(HttpMethod.Get, "api/user/profile");
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
@@ -90,6 +95,13 @@ namespace GoToSpore.UI
                         LblFullName.Text = !string.IsNullOrEmpty(profile.FullName) ? profile.FullName : profile.Username;
                         LblUsername.Text = $"@{profile.Username}";
 
+                        // عرض صورة الملف الشخصي المرجعة من السيرفر إذا وجدت
+                        if (!string.IsNullOrEmpty(profile.ImageUrl))
+                        {
+                            Preferences.Default.Set("user_avatar_url", profile.ImageUrl);
+                            ImgAvatar.Source = profile.ImageUrl;
+                        }
+
                         double finalDistanceMeters = Math.Max(profile.TotalDistanceMeters, localDistanceMeters);
                         double totalKm = finalDistanceMeters / 1000.0;
                         
@@ -109,7 +121,7 @@ namespace GoToSpore.UI
             }
             catch (Exception)
             {
-                // Fallback to local cached data on connection error
+                // التعامل مع انقطاع الاتصال
             }
         }
 
@@ -139,6 +151,7 @@ namespace GoToSpore.UI
             Preferences.Default.Remove("user_name");
             Preferences.Default.Remove("full_name");
             Preferences.Default.Remove("user_avatar_path");
+            Preferences.Default.Remove("user_avatar_url");
             Preferences.Default.Remove("saved_steps_count");
             Preferences.Default.Remove("saved_distance_meters");
             Preferences.Default.Remove("saved_active_seconds");
@@ -152,6 +165,9 @@ namespace GoToSpore.UI
 
         [JsonPropertyName("full_name")]
         public string FullName { get; set; } = string.Empty;
+
+        [JsonPropertyName("image_url")]
+        public string ImageUrl { get; set; } = string.Empty;
 
         [JsonPropertyName("total_distance_meters")]
         public double TotalDistanceMeters { get; set; }
