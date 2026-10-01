@@ -4,6 +4,11 @@ using Microsoft.Maui.Devices.Sensors;
 using Microsoft.Maui.Storage;
 using System;
 using System.Diagnostics;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace GoToSpore.UI
 {
@@ -16,9 +21,7 @@ namespace GoToSpore.UI
         private double _caloriesBurned = 0;
         private double _estimatedSpeedKmh = 0;
 
-        // معدل متوسط طول الخطوة بالمتر (0.78 متر)
         private const double StepDistanceInMeters = 0.78;
-        // معدل حرق السعرات للخطوة الواحدة (تقريباً 0.04 سعر حراري للخطوة)
         private const double CaloriesPerStep = 0.04;
         private const double ShakeThreshold = 2.5;
         private DateTime _lastShakeTime = DateTime.MinValue;
@@ -32,6 +35,10 @@ namespace GoToSpore.UI
         private const double TargetRunningKm = 5.0;
         private const int TargetWalkingMinutes = 30;
 
+        // غير هذا الرابط حسب عنوان السيرفر الخاص بك (مثلاً http://10.0.2.2:8080 للـ Emulator)
+        private const string ApiBaseUrl = "http://10.0.2.2:8080/api";
+        private readonly HttpClient _httpClient = new HttpClient();
+
         public MainPage()
         {
             InitializeComponent();
@@ -41,7 +48,6 @@ namespace GoToSpore.UI
         {
             base.OnAppearing();
 
-            // 1. التحقق من التوكن وقراءة بيانات المستخدم المحفوظة
             string authToken = Preferences.Default.Get("auth_token", string.Empty);
 
             if (string.IsNullOrEmpty(authToken))
@@ -50,34 +56,93 @@ namespace GoToSpore.UI
                 return;
             }
 
-            // 2. تحميل البيانات المحفوظة سابقاً
-            LoadSavedData();
+            // 1. تحميل البيانات من السيرفر والذاكرة المحلية
+            await SyncDataFromApiAsync(authToken);
 
-            // 3. تشغيل الحساسات
+            // 2. تشغيل الحساسات
             ToggleAccelerometer(true);
         }
 
-        protected override void OnDisappearing()
+        protected override async void OnDisappearing()
         {
             base.OnDisappearing();
             ToggleAccelerometer(false);
-            SaveCurrentData();
+            
+            SaveCurrentDataLocally();
+            await SyncDataToApiAsync();
         }
 
-        #region Data Persistence (Preferences)
+        #region Data Persistence & API Sync
 
-        private void LoadSavedData()
+        private async Task SyncDataFromApiAsync(string token)
+        {
+            try
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                var response = await _httpClient.GetAsync($"{ApiBaseUrl}/user/profile");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var json = await response.ContentReadAsStringAsync();
+                    using var doc = JsonDocument.Parse(json);
+                    var root = doc.RootElement;
+
+                    if (root.TryGetProperty("total_distance_meters", out var dist))
+                        _distanceInMeters = dist.GetDouble();
+
+                    if (root.TryGetProperty("total_calories", out var cal))
+                        _caloriesBurned = cal.GetDouble();
+
+                    _distanceInKm = _distanceInMeters / 1000.0;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[API FETCH ERROR]: {ex.Message}");
+                // في حال انقطاع النت، الاعتماد على البيانات المحلية
+                LoadLocalSavedData();
+            }
+
+            UpdateUIAndGoals();
+        }
+
+        private async Task SyncDataToApiAsync()
+        {
+            try
+            {
+                string token = Preferences.Default.Get("auth_token", string.Empty);
+                if (string.IsNullOrEmpty(token)) return;
+
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+                var payload = new
+                {
+                    distance_meters = _distanceInMeters,
+                    calories = _caloriesBurned,
+                    speed_kmh = _estimatedSpeedKmh
+                };
+
+                var json = JsonSerializer.Serialize(payload);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                await _httpClient.PostAsync($"{ApiBaseUrl}/user/stats", content);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[API SAVE ERROR]: {ex.Message}");
+            }
+        }
+
+        private void LoadLocalSavedData()
         {
             _steps = Preferences.Default.Get(KeySteps, 0);
             _distanceInMeters = Preferences.Default.Get(KeyDistanceMeters, 0.0);
             _distanceInKm = Preferences.Default.Get(KeyDistanceKm, _distanceInMeters / 1000.0);
             _activeSeconds = Preferences.Default.Get(KeyActiveSeconds, 0);
             _caloriesBurned = Preferences.Default.Get(KeyCalories, _steps * CaloriesPerStep);
-
-            UpdateUIAndGoals();
         }
 
-        private void SaveCurrentData()
+        private void SaveCurrentDataLocally()
         {
             Preferences.Default.Set(KeySteps, _steps);
             Preferences.Default.Set(KeyDistanceMeters, _distanceInMeters);
@@ -178,22 +243,27 @@ namespace GoToSpore.UI
             }
         }
 
-        private void AddStepAndDistance(int stepIncrement)
+        private async void AddStepAndDistance(int stepIncrement)
         {
             _steps += stepIncrement;
             _distanceInMeters += stepIncrement * StepDistanceInMeters;
             _distanceInKm = _distanceInMeters / 1000.0;
             _caloriesBurned += stepIncrement * CaloriesPerStep;
 
-            // حساب تقديري للسرعة بالكيلومتر/ساعة
             if (_activeSeconds > 0)
             {
                 double activeHours = _activeSeconds / 3600.0;
                 _estimatedSpeedKmh = _distanceInKm / activeHours;
             }
 
-            SaveCurrentData();
+            SaveCurrentDataLocally();
             UpdateUIAndGoals();
+
+            // حفظ دوري للسيرفر كل 10 خطوات للحفاظ على المزامنة
+            if (_steps % 10 == 0)
+            {
+                await SyncDataToApiAsync();
+            }
         }
 
         private void UpdateUIAndGoals()
@@ -293,4 +363,4 @@ namespace GoToSpore.UI
 
         #endregion
     }
-} 
+}
