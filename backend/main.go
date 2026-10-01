@@ -29,10 +29,10 @@ type User struct {
     Password            string  `json:"password" binding:"required"`
     FullName            string  `json:"full_name"`
     ImageURL            string  `json:"image_url"`
-    TotalDistanceMeters double `json:"total_distance_meters"`
-    MaxSpeedKmh         double `json:"max_speed_kmh"`
+    TotalDistanceMeters float64 `json:"total_distance_meters"`
+    MaxSpeedKmh         float64 `json:"max_speed_kmh"`
     TotalActivities     int     `json:"total_activities"`
-    TotalCalories       double `json:"total_calories"`
+    TotalCalories       float64 `json:"total_calories"`
 }
 
 type UserProfileResponse struct {
@@ -264,8 +264,8 @@ func main() {
         }
 
         c.JSON(http.StatusOK, gin.H{
-            "message": "تم تسجيل الدخول بنجاح",
-            "token":   token,
+            "message":  "تم تسجيل الدخول بنجاح",
+            "token":    token,
             "username": user.Username,
             "full_name": user.FullName,
             "user": gin.H{
@@ -299,7 +299,6 @@ func main() {
     protected := router.Group("/api")
     protected.Use(AuthMiddleware())
     {
-        // تم توحيد المسار ليصبح api/user/profile أو api/profile
         protected.GET("/user/profile", func(c *gin.Context) {
             username, _ := c.Get("username")
 
@@ -312,7 +311,6 @@ func main() {
                 return
             }
 
-            // إرجاع كائن ملف الشخصي بشكل مباشر
             c.JSON(http.StatusOK, UserProfileResponse{
                 Username:            user.Username,
                 FullName:            user.FullName,
