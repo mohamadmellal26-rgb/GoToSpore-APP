@@ -30,6 +30,7 @@ type User struct {
     FullName            string  `json:"full_name"`
     ImageURL            string  `json:"image_url"`
     TotalDistanceMeters float64 `json:"total_distance_meters"`
+    TotalDistanceKm     float64 `json:"total_distance_km"`
     MaxSpeedKmh         float64 `json:"max_speed_kmh"`
     TotalActivities     int     `json:"total_activities"`
     TotalCalories       float64 `json:"total_calories"`
@@ -40,6 +41,7 @@ type UserProfileResponse struct {
     FullName            string  `json:"full_name"`
     ImageURL            string  `json:"image_url"`
     TotalDistanceMeters float64 `json:"total_distance_meters"`
+    TotalDistanceKm     float64 `json:"total_distance_km"`
     MaxSpeedKmh         float64 `json:"max_speed_kmh"`
     TotalActivities     int     `json:"total_activities"`
     TotalCalories       float64 `json:"total_calories"`
@@ -56,12 +58,13 @@ type Claims struct {
 }
 
 type Message struct {
-    Type     string `json:"type"`
-    Username string `json:"username"`
-    Content  string `json:"content"`
-    Color    string `json:"color"`
-    Calories int    `json:"calories"`
-    Duration int    `json:"duration"`
+    Type     string  `json:"type"`
+    Username string  `json:"username"`
+    Content  string  `json:"content"`
+    Color    string  `json:"color"`
+    Calories float64 `json:"calories"`
+    Duration int     `json:"duration"`
+    Distance float64 `json:"distance"`
 }
 
 type Client struct {
@@ -235,6 +238,7 @@ func main() {
         }
 
         newUser.Password = hashedPassword
+        newUser.TotalDistanceKm = newUser.TotalDistanceMeters / 1000.0
         usersDb[newUser.Username] = newUser
 
         c.JSON(http.StatusCreated, gin.H{"message": "تم إنشاء الحساب بنجاح"})
@@ -264,9 +268,9 @@ func main() {
         }
 
         c.JSON(http.StatusOK, gin.H{
-            "message":  "تم تسجيل الدخول بنجاح",
-            "token":    token,
-            "username": user.Username,
+            "message":   "تم تسجيل الدخول بنجاح",
+            "token":     token,
+            "username":  user.Username,
             "full_name": user.FullName,
             "user": gin.H{
                 "id":        user.ID,
@@ -316,6 +320,7 @@ func main() {
                 FullName:            user.FullName,
                 ImageURL:            user.ImageURL,
                 TotalDistanceMeters: user.TotalDistanceMeters,
+                TotalDistanceKm:     user.TotalDistanceMeters / 1000.0,
                 MaxSpeedKmh:         user.MaxSpeedKmh,
                 TotalActivities:     user.TotalActivities,
                 TotalCalories:       user.TotalCalories,
