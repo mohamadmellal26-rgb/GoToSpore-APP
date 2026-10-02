@@ -49,6 +49,7 @@
 /home/mohamad/Development/GoToSpore/GoToSpore.UI/obj/Debug/net8.0-android/resizetizer/r/mipmap-hdpi/appicon_background.png
 /home/mohamad/Development/GoToSpore/GoToSpore.UI/obj/Debug/net8.0-android/resizetizer/r/mipmap-mdpi/appicon_background.png
 /home/mohamad/Development/GoToSpore/GoToSpore.UI/obj/Debug/net8.0-android/resizetizer/r/drawable/images.jpeg
+/home/mohamad/Development/GoToSpore/GoToSpore.UI/obj/Debug/net8.0-android/resizetizer/r/drawable/appimg.png
 /home/mohamad/Development/GoToSpore/GoToSpore.UI/obj/Debug/net8.0-android/mauiimage.stamp
 /home/mohamad/Development/GoToSpore/GoToSpore.UI/obj/Debug/net8.0-android/mauiimage.outputs
 /home/mohamad/Development/GoToSpore/GoToSpore.UI/obj/Debug/net8.0-android/libraryprojectimports.cache
@@ -1086,8 +1087,3 @@
 /home/mohamad/Development/GoToSpore/GoToSpore.UI/obj/Debug/net8.0-android/stamp/_GenerateJavaStubs.stamp
 /home/mohamad/Development/GoToSpore/GoToSpore.UI/obj/Debug/net8.0-android/stamp/_GeneratePackageManagerJava.stamp
 /home/mohamad/Development/GoToSpore/GoToSpore.UI/obj/Debug/net8.0-android/stamp/_ResolveLibraryProjectImports.stamp
-/home/mohamad/Development/GoToSpore/GoToSpore.UI/obj/Debug/net8.0-android/resizetizer/r/drawable/appimg.png
-/home/mohamad/Development/GoToSpore/GoToSpore.UI/obj/Debug/net8.0-android/android/assets/arm64-v8a/System.Private.CoreLib.dll
-/home/mohamad/Development/GoToSpore/GoToSpore.UI/obj/Debug/net8.0-android/android/assets/armeabi-v7a/System.Private.CoreLib.dll
-/home/mohamad/Development/GoToSpore/GoToSpore.UI/obj/Debug/net8.0-android/android/assets/x86/System.Private.CoreLib.dll
-/home/mohamad/Development/GoToSpore/GoToSpore.UI/obj/Debug/net8.0-android/android/assets/x86_64/System.Private.CoreLib.dll
